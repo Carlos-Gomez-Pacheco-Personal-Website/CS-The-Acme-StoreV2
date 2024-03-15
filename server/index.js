@@ -2,12 +2,14 @@ const {
   client,
   createTables,
   createUser,
-  createSkill,
+  createProduct,
   fetchUsers,
-  fetchSkills,
-  createUserSkill,
-  fetchUserSkills,
-  deleteUserSkill,
+  fetchProducts,
+  fetchFavorites,
+  createFavorite,
+  destroyFavorite,
+  authenticate,
+  userWithToken,
 } = require("./db");
 
 const express = require("express");
@@ -24,15 +26,45 @@ app.use(
   express.static(path.join(__dirname, "../client/dist/assets"))
 );
 
-app.get("/api/skills", async (req, res, next) => {
+// Middleware to authenticate user by token
+const authMiddleware = async (req, res, next) => {
   try {
-    res.send(await fetchSkills());
+    const token = req.headers.authorization;
+    if (!token) {
+      throw new Error("No token provided");
+    }
+    const user = await userWithToken(token);
+    if (!user) {
+      throw new Error("Invalid token");
+    }
+    req.user = user;
+    next();
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+// Api routes authenticate user by token
+
+app.post("/api/auth", async (req, res, next) => {
+  try {
+    const token = await authenticate(req.body);
+    res.send({ token });
   } catch (ex) {
     next(ex);
   }
 });
 
-app.get("/api/users", async (req, res, next) => {
+app.get("/api/me", authMiddleware, async (req, res, next) => {
+  try {
+    res.send(req.user);
+  } catch (ex) {
+    next(ex);
+  }
+});
+
+// Api users routes
+app.get("/api/users", authMiddleware, async (req, res, next) => {
   try {
     res.send(await fetchUsers());
   } catch (ex) {
@@ -40,35 +72,65 @@ app.get("/api/users", async (req, res, next) => {
   }
 });
 
-app.get("/api/users/:id/userSkills", async (req, res, next) => {
+app.post("/api/users", async (req, res, next) => {
   try {
-    res.send(await fetchUserSkills(req.params.id));
+    const user = await createUser(req.body);
+    res.status(201).send(user);
   } catch (ex) {
     next(ex);
   }
 });
 
-app.delete("/api/users/:userId/userSkills/:id", async (req, res, next) => {
+app.get("/api/products", authMiddleware, async (req, res, next) => {
   try {
-    await deleteUserSkill({ user_id: req.params.userId, id: req.params.id });
-    res.sendStatus(204);
+    res.send(await fetchProducts());
   } catch (ex) {
     next(ex);
   }
 });
 
-app.post("/api/users/:id/userSkills", async (req, res, next) => {
+app.post("/api/products", async (req, res, next) => {
+  try {
+    const product = await createProduct(req.body);
+    res.status(201).send(product);
+  } catch (ex) {
+    next(ex);
+  }
+});
+
+app.get("/api/users/:id/favorites", authMiddleware, async (req, res, next) => {
+  try {
+    res.send(await fetchFavorites(req.params.id));
+  } catch (ex) {
+    next(ex);
+  }
+});
+
+app.post("/api/users/:id/favorites", authMiddleware, async (req, res, next) => {
   try {
     res.status(201).send(
-      await createUserSkill({
+      await createFavorite({
         user_id: req.params.id,
-        skill_id: req.body.skill_id,
+        product_id: req.body.product_id,
       })
     );
   } catch (ex) {
     next(ex);
   }
 });
+
+app.delete(
+  "/api/users/:userId/favorites/:id",
+  authMiddleware,
+  async (req, res, next) => {
+    try {
+      await destroyFavorite({ user_id: req.params.userId, id: req.params.id });
+      res.sendStatus(204);
+    } catch (ex) {
+      next(ex);
+    }
+  }
+);
 
 const init = async () => {
   console.log("connecting to database");
@@ -82,32 +144,32 @@ const init = async () => {
       createUser({ username: "lucy", password: "lucy_pw" }),
       createUser({ username: "larry", password: "larry_pw" }),
       createUser({ username: "ethyl", password: "ethyl_pw" }),
-      createSkill({ name: "dancing" }),
-      createSkill({ name: "singing" }),
-      createSkill({ name: "plate spinning" }),
-      createSkill({ name: "juggling" }),
+      createProduct({ name: "dancing" }),
+      createProduct({ name: "singing" }),
+      createProduct({ name: "plate spinning" }),
+      createProduct({ name: "juggling" }),
     ]);
 
   console.log(await fetchUsers());
-  console.log(await fetchSkills());
+  console.log(await fetchProducts());
 
-  const userSkills = await Promise.all([
-    createUserSkill({ user_id: moe.id, skill_id: plateSpinning.id }),
-    createUserSkill({ user_id: moe.id, skill_id: dancing.id }),
-    createUserSkill({ user_id: ethyl.id, skill_id: singing.id }),
-    createUserSkill({ user_id: ethyl.id, skill_id: juggling.id }),
+  const favorites = await Promise.all([
+    createFavorite({ user_id: moe.id, product_id: dancing.id }),
+    createFavorite({ user_id: moe.id, product_id: singing.id }),
+    createFavorite({ user_id: ethyl.id, product_id: plateSpinning.id }),
+    createFavorite({ user_id: ethyl.id, product_id: juggling.id }),
   ]);
-  console.log(await fetchUserSkills(moe.id));
-  await deleteUserSkill({ user_id: moe.id, id: userSkills[0].id });
-  console.log(await fetchUserSkills(moe.id));
+  console.log(await fetchFavorites(moe.id));
+  await destroyFavorite({ user_id: moe.id, id: favorites[0].id });
+  console.log(await fetchFavorites(moe.id));
 
-  console.log(`curl localhost:3000/api/users/${ethyl.id}/userSkills`);
+  console.log(`curl localhost:3000/api/users/${ethyl.id}/favorites`);
 
   console.log(
-    `curl -X POST localhost:3000/api/users/${ethyl.id}/userSkills -d '{"skill_id": "${dancing.id}"}' -H 'Content-Type:application/json'`
+    `curl -X POST localhost:3000/api/users/${ethyl.id}/favorites -d '{"product_id": "${dancing.id}"}' -H 'Content-Type:application/json'`
   );
   console.log(
-    `curl -X DELETE localhost:3000/api/users/${ethyl.id}/userSkills/${userSkills[3].id}`
+    `curl -X DELETE localhost:3000/api/users/${ethyl.id}/favorites/${favorites[3].id}`
   );
 
   console.log("data seeded");
