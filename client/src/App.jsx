@@ -98,55 +98,6 @@
 //     }
 //   };
 
-//   return (
-//     <div className="App">
-//       <h1>Store</h1>
-//       {!token ? (
-//         <div className="auth-form">
-//           <input
-//             type="text"
-//             placeholder="Username"
-//             value={username}
-//             onChange={(e) => setUsername(e.target.value)}
-//           />
-//           <input
-//             type="password"
-//             placeholder="Password"
-//             value={password}
-//             onChange={(e) => setPassword(e.target.value)}
-//           />
-//           <button onClick={handleRegister}>Register</button>
-//           <button onClick={handleLogin}>Login</button>
-//         </div>
-//       ) : (
-//         <div>
-//           <input
-//             type="text"
-//             placeholder="New product name"
-//             value={newProductName}
-//             onChange={(e) => setNewProductName(e.target.value)}
-//           />
-//           <button onClick={handleCreateProduct}>Create Product</button>
-//           <div className="product-list">
-//             {products.map((product) => (
-//               <div key={product.id} className="product-item">
-//                 <h2>{product.name}</h2>
-//                 <button onClick={() => handleToggleFavorite(product.id)}>
-//                   {favorites.includes(product.id)
-//                     ? "Remove from Favorites"
-//                     : "Add to Favorites"}
-//                 </button>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default App;
-
 import { useState, useEffect } from "react";
 import "./App.css";
 
@@ -187,7 +138,6 @@ function App() {
   }, [userId]);
 
   const handleRegister = async () => {
-    // Register user
     const response = await fetch("/api/users", {
       method: "POST",
       headers: {
@@ -203,7 +153,6 @@ function App() {
   };
 
   const handleLogin = async () => {
-    // Login user
     const response = await fetch("/api/auth", {
       method: "POST",
       headers: {
@@ -303,7 +252,9 @@ function App() {
             {products.map((product) => (
               <div key={product.id} className="product-item">
                 <h2>{product.name}</h2>
-                {favorites.includes(product.id) ? (
+                {favorites.some(
+                  (favorite) => favorite.product_id === product.id
+                ) ? (
                   <button onClick={() => handleRemoveFavorite(product.id)}>
                     Remove from Favorites
                   </button>
@@ -323,26 +274,3 @@ function App() {
 }
 
 export default App;
-
-// const handleAddFavorite = async (userId, productId) => {
-//   const response = await fetch(`/api/users/${userId}/favorites`, {
-//     method: "POST",
-//     headers: {
-//       "Content-Type": "application/json",
-//     },
-//     body: JSON.stringify({ product_id: productId }),
-//   });
-//   if (response.ok) {
-//     const data = await response.json();
-//     setFavorites([...favorites, data]);
-//   }
-// };
-
-// const handleRemoveFavorite = async (userId, favoriteId) => {
-//   const response = await fetch(`/api/users/${userId}/favorites/${favoriteId}`, {
-//     method: "DELETE",
-//   });
-//   if (response.ok) {
-//     setFavorites(favorites.filter((favorite) => favorite.id !== favoriteId));
-//   }
-// };
