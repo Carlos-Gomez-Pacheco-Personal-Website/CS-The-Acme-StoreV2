@@ -111,20 +111,20 @@ const authenticate = async ({ username, password }) => {
   throw new Error("Invalid credentials");
 };
 
-const userWithToken = async (token) => {
-  try {
-    const { id } = jwt.verify(token, JWT);
-    const SQL = `
-      SELECT *
-      FROM users
-      WHERE id = $1
-    `;
-    const response = await client.query(SQL, [id]);
-    return response.rows[0];
-  } catch (ex) {
-    throw new Error("Invalid token");
-  }
-};
+// const userWithToken = async (token) => {
+//   try {
+//     const { id } = jwt.verify(token, JWT);
+//     const SQL = `
+//       SELECT *
+//       FROM users
+//       WHERE id = $1
+//     `;
+//     const response = await client.query(SQL, [id]);
+//     return response.rows[0];
+//   } catch (ex) {
+//     throw new Error("Invalid token");
+//   }
+// };
 
 module.exports = {
   client,
@@ -137,5 +137,5 @@ module.exports = {
   createFavorite,
   destroyFavorite,
   authenticate,
-  userWithToken,
+  // userWithToken,
 };

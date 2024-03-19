@@ -9,7 +9,7 @@ const {
   createFavorite,
   destroyFavorite,
   authenticate,
-  userWithToken,
+  // userWithToken,
 } = require("./db");
 
 const express = require("express");
@@ -26,23 +26,23 @@ app.use(
   express.static(path.join(__dirname, "../client/dist/assets"))
 );
 
-// Middleware to authenticate user by token
-const authMiddleware = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization;
-    if (!token) {
-      throw new Error("No token provided");
-    }
-    const user = await userWithToken(token);
-    if (!user) {
-      throw new Error("Invalid token");
-    }
-    req.user = user;
-    next();
-  } catch (ex) {
-    next(ex);
-  }
-};
+// // Middleware to authenticate user by token
+// const authMiddleware = async (req, res, next) => {
+//   try {
+//     const token = req.headers.authorization;
+//     if (!token) {
+//       throw new Error("No token provided");
+//     }
+//     const user = await userWithToken(token);
+//     if (!user) {
+//       throw new Error("Invalid token");
+//     }
+//     req.user = user;
+//     next();
+//   } catch (ex) {
+//     next(ex);
+//   }
+// };
 
 // Api routes authenticate user by token
 
@@ -55,22 +55,28 @@ app.post("/api/auth", async (req, res, next) => {
   }
 });
 
-app.get("/api/me", authMiddleware, async (req, res, next) => {
-  try {
-    res.send(req.user);
-  } catch (ex) {
-    next(ex);
+app.get(
+  "/api/me", //authMiddleware,
+  async (req, res, next) => {
+    try {
+      res.send(req.user);
+    } catch (ex) {
+      next(ex);
+    }
   }
-});
+);
 
 // Api users routes
-app.get("/api/users", authMiddleware, async (req, res, next) => {
-  try {
-    res.send(await fetchUsers());
-  } catch (ex) {
-    next(ex);
+app.get(
+  "/api/users", //authMiddleware,
+  async (req, res, next) => {
+    try {
+      res.send(await fetchUsers());
+    } catch (ex) {
+      next(ex);
+    }
   }
-});
+);
 
 app.post("/api/users", async (req, res, next) => {
   try {
@@ -81,13 +87,16 @@ app.post("/api/users", async (req, res, next) => {
   }
 });
 
-app.get("/api/products", authMiddleware, async (req, res, next) => {
-  try {
-    res.send(await fetchProducts());
-  } catch (ex) {
-    next(ex);
+app.get(
+  "/api/products", //authMiddleware,
+  async (req, res, next) => {
+    try {
+      res.send(await fetchProducts());
+    } catch (ex) {
+      next(ex);
+    }
   }
-});
+);
 
 app.post("/api/products", async (req, res, next) => {
   try {
@@ -98,30 +107,36 @@ app.post("/api/products", async (req, res, next) => {
   }
 });
 
-app.get("/api/users/:id/favorites", authMiddleware, async (req, res, next) => {
-  try {
-    res.send(await fetchFavorites(req.params.id));
-  } catch (ex) {
-    next(ex);
+app.get(
+  "/api/users/:id/favorites", //authMiddleware,
+  async (req, res, next) => {
+    try {
+      res.send(await fetchFavorites(req.params.id));
+    } catch (ex) {
+      next(ex);
+    }
   }
-});
+);
 
-app.post("/api/users/:id/favorites", authMiddleware, async (req, res, next) => {
-  try {
-    res.status(201).send(
-      await createFavorite({
-        user_id: req.params.id,
-        product_id: req.body.product_id,
-      })
-    );
-  } catch (ex) {
-    next(ex);
+app.post(
+  "/api/users/:id/favorites", //authMiddleware,
+  async (req, res, next) => {
+    try {
+      res.status(201).send(
+        await createFavorite({
+          user_id: req.params.id,
+          product_id: req.body.product_id,
+        })
+      );
+    } catch (ex) {
+      next(ex);
+    }
   }
-});
+);
 
 app.delete(
   "/api/users/:userId/favorites/:id",
-  authMiddleware,
+  //authMiddleware,
   async (req, res, next) => {
     try {
       await destroyFavorite({ user_id: req.params.userId, id: req.params.id });
